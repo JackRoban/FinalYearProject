@@ -1,0 +1,395 @@
+Code Used for Final Year Project
+
+## LOAD PACKAGES ##
+BiocManager::install(version="3.12") 	# BiocManager v1.30.10 # do once
+library(BiocManager)
+BiocManager::version() 			# check the version
+
+BiocManager::install(c("affyio", "affy", "limma", "oligo"), ask=F) # run every time
+# This may be slow because of the large number of dependencies
+library(affy)              # activate library, run every time
+library(affyio)            # activate library, run every time
+library(oligo)             # activate library, run every time
+library(limma)             # activate library, run every time
+
+BiocManager::install(c("GEOquery"), ask=F)
+library(GEOquery)
+BiocManager::install(c("Biobase"), ask=F)
+library(Biobase)
+BiocManager::install(c("knitr"), ask=F)
+library(knitr)
+BiocManager::install(c("simpleaffy"), ask=F)
+library(simpleaffy)
+BiocManager::install(c("GenomicRanges"), ask=F)
+library(GenomicRanges)
+BiocManager::install(c("Organism.dplyr"), ask=F)
+library(Organism.dplyr)
+BiocManager::install(c("illuminaio"), ask=F)
+library(illuminaio)
+install.packages("XML", ask=F)
+library(XML)
+install.packages("statmod", ask=F)
+library(statmod)
+install.packages("cgdsr", ask=F)
+library(cgdsr)
+install.packages("R2HTML", ask=F)
+library(R2HTML)
+install.packages("hash", ask=F)
+library(hash)
+install.packages("ggplot2", ask=F)
+library(ggplot2)
+install.packages("ggrepel", ask=F)
+library(ggrepel)
+install.packages("gplots", ask=F)
+library(gplots)
+install.packages("heatmap.plus", ask=F)
+library(heatmap.plus)
+install.packages("beeswarm", ask=F)
+library(beeswarm)
+install.packages("xtable", ask=F) # let this re-start, hit "yes"
+library(xtable)
+install.packages("rmarkdown")  # let this re-start, hit "yes"
+library(rmarkdown)
+
+sessionInfo() # to check versions
+
+###GDSC database downloads###
+1	Cell_line_RMA_proc_basalExp.txt.zip
+2.  	GDSC2_fitted_dose_response_25Feb20.xlsx
+
+wget https://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources//Data/preprocessed/Cell_line_RMA_proc_basalExp.txt.zip
+wget ftp://ftp.sanger.ac.uk/pub/project/cancerrxgene/releases/current_release/GDSC2_fitted_dose_response_25Feb20.xlsx
+
+##Reading in GDSC2_fitted_dose_response_25Feb20.xlsx file##
+
+GDSC_CELL_LINE_RMA_BASAL_EXPRESSION <-data.frame(read.delim("Cell_line_RMA_proc_basalExp.txt", sep = '\t'))
+
+##Reading in GDSC2_fitted_dose_response_25Feb20.xlsx file##
+
+install.packages(“readxl”)
+library(“readxl”)
+GDSC2_fitted_dose_responsedata <-data.frame(read_excel("GDSC2_fitted_dose_response_25Feb20.xlsx"))
+
+##GDSC cell line gene expression dataset visualisation##
+GDSC_CELL_LINE_RMA_BASAL_EXPRESSION<- data.frame(read.delim("/media/newdrive/BCANCER/CCLE/Cell_line_RMA_proc_basalExp.txt", sep = '\t'))
+GDSC_sample_names <- GDSC_CELL_LINE_RMA_BASAL_EXPRESSION[,1]
+GDSCexpression <- as.matrix(GDSC_CELL_LINE_RMA_BASAL_EXPRESSION[,3:1020])
+
+##Heatmap: Subset of Raw GDSC Data (20 samples)##
+names<- 1:20
+png(file="GDSC_heatmap.png",  units="px")
+heatmap(GDSCexpression[1:20,], Colv=as.dendrogram(hclust(dist(t(GDSCexpression[1:20,])))), cexRow=0.65, cexCol=0.65, labCol = sample_names, labRow = c())
+dev.off()
+
+## Boxplot: Subset of Raw GDSC data (20 samples)##
+names<- 1:20
+subset_colours <- c(rep("red",4), rep("blue",4), rep("green",4), rep("orange",4), rep("pink",4))
+
+png(file="GDSC_Boxplot.png", width=1500, height=1500, units="px")
+op <- par(mar = c(10, 15, 3, 2) + 4)
+boxplot(t(GDSCexpression[1:20,]), las=2, cex=1.5, cex.lab = 1.5, ylab='GDSC Expression Level', names= names, col=subset_colours)
+dev.off()
+
+##PCA: Raw GDSC Data##
+pcaproc_GDSC<- prcomp(GDSCexpression)
+ 
+### PC Values 1-3 ###
+pc1_GDSC =round(100*pcaproc_GDSC$sdev[1]^2/(sum(pcaproc_GDSC$sdev^2)),1)
+pc2_GDSC =round(100*pcaproc_GDSC$sdev[2]^2/(sum(pcaproc_GDSC$sdev^2)),1)
+pc3_GDSC =round(100*pcaproc_GDSC$sdev[3]^2/(sum(pcaproc_GDSC$sdev^2)),1)
+
+### PC1 vs. PC2 ###
+png(file="PC1vPC2_GDSC.png",  units="px")
+plot(pcaproc_GDSC$x[,1], pcaproc_GDSC$x[,2], col= subset_colours , xlab= pc1_GDSC, ylab= pc2_GDSC, main='PC1 vs PC2', cex= 1, cex.axis= 1.5, cex.lab= 1.5) +grid()
+dev.off() 
+### PC2 vs. PC3 ###
+png(file="PC2vPC3_GDSC.png", units="px")
+plot(pcaproc_GDSC$x[,2], pcaproc_GDSC$x[,3], col=subset_colours , xlab= pc2_GDSC, ylab= pc3_GDSC, main='PC2 vs PC3', cex= 1, cex.axis= 1.5, cex.lab= 1.5) +grid()
+dev.off()
+
+## PCA(Transposed): Raw GDSC Data##
+pcaproc_GDSC_transposed<- prcomp(t(GDSCexpression))  #Transposed GDSC data
+ 
+### PC Values 1-3 ###
+pc1_GDSC_transposed =round(100*pcaproc_GDSC_transposed$sdev[1]^2/(sum(pcaproc_GDSC_transposed$sdev^2)),1) #Transposed PC value 1
+pc2_GDSC_transposed =round(100*pcaproc_GDSC_transposed$sdev[2]^2/(sum(pcaproc_GDSC_transposed$sdev^2)),1)
+#Transposed PC value 2
+pc3_GDSC_transposed =round(100*pcaproc_GDSC_transposed$sdev[3]^2/(sum(pcaproc_GDSC_transposed$sdev^2)),1)
+#Transposed PC value 3
+ 
+### PC1 vs. PC2 ###
+png(file="PC1vPC2_GDSC_transposed.png",  units="px") #Create .png file for Transposed PC1 vs. PC2
+plot(pcaproc_GDSC_transposed$x[,1], pcaproc_GDSC_transposed$x[,2], col= subset_colours , xlab= pc1_GDSC_transposed, ylab= pc2_GDSC_transposed, main='GDSC (Transposed): PC1 vs PC2', cex= 1, cex.axis= 1.5, cex.lab= 1.5) +grid()
+dev.off() 
+### PC2 vs. PC3 ###
+png(file="PC2vPC3_GDSC_transposed.png",  units="px") #Create .png file for Transposed PC2 vs. PC3
+plot(pcaproc_GDSC_transposed$x[,2], pcaproc_GDSC_transposed$x[,3], col= subset_colours , xlab= pc2_GDSC_transposed, ylab= pc3_GDSC_transposed, main='GDSC (Transposed): PC2 vs PC3', cex= 1, cex.axis= 1.5, cex.lab= 1.5) +grid()
+dev.off()
+
+## Normalisation of GDSC Cell line gene expression data ### 
+
+drank <- apply(GDSCexpression, 2, rank, ties.method="min") # get ranks
+dsorted <- data.frame(apply(GDSCexpression , 2, sort)) # sort columns
+dmean <- apply(dsorted, 1, mean) # get row means
+index_to_mean <- function(my_index, my_mean){   return(my_mean[my_index]) } # link ranks & means
+GDSCnorm <- apply(drank, 2, index_to_mean, my_mean=dmean) # create quantile normalised data
+str(GDSCnorm) # Check structure of data
+
+##Visualisation of normalised cell line gene expression dataset##
+##Heatmap: Normalised GDSC Data##
+png(file="GDSC_heatmap_norm.png", width=2000, height=2000, units="px")
+heatmap(GDSCnorm[1:1000,], Colv=as.dendrogram(hclust(dist(t(GDSCnorm)))),cexRow=3, cexCol=3, labCol = GDSC_sample_names, labRow = c(), margins=c(42,8))
+dev.off()
+
+##Boxplot: Normalised GDSC Data##
+names<- 1:1018
+
+png(file="GDSC_Boxplot_norm.png", width=1500, height=1500, units="px")
+op <- par(mar = c(10, 15, 3, 2) + 4)
+boxplot(log2(GDSCnorm), las=2, cex=1.5, cex.lab = 1.5, ylab='GDSC Normalised Expression Level', names= names, col=subset_colours)
+dev.off()
+
+##PCA: Normalised GDSC Data##
+pcaproc_GDSC_norm<- prcomp(GDSCnorm)
+ 
+### PC Values 1-3 ###
+pc1_GDSC_norm =round(100*pcaproc_GDSC_norm$sdev[1]^2/(sum(pcaproc_GDSC_norm$sdev^2)),1)
+pc2_GDSC_norm =round(100*pcaproc_GDSC_norm$sdev[2]^2/(sum(pcaproc_GDSC_norm$sdev^2)),1)
+pc3_GDSC_norm =round(100*pcaproc_GDSC_norm$sdev[3]^2/(sum(pcaproc_GDSC_norm$sdev^2)),1)
+
+### PC1 vs. PC2 ###
+png(file="PC1vPC2_GDSC_norm.png",  units="px")
+plot(pcaproc_GDSC_norm$x[,1], pcaproc_GDSC_norm$x[,2], col= subset_colours , xlab= pc1_GDSC_norm, ylab= pc2_GDSC_norm, main='Normalised GDSC: PC1 vs PC2', cex= 1, cex.axis= 1.5, cex.lab= 1.5) +grid()
+dev.off() 
+### PC2 vs. PC3 ###
+png(file="PC2vPC3_GDSC_norm.png", units="px")
+plot(pcaproc_GDSC_norm$x[,2], pcaproc_GDSC_norm$x[,3], col=subset_colours , xlab= pc2_GDSC_norm, ylab= pc3_GDSC_norm, main='Normalised GDSC: PC2 vs PC3', cex= 1, cex.axis= 1.5, cex.lab= 1.5) +grid()
+dev.off()
+
+##PCA: Normalised (Transposed) GDSC Data##
+pcaproc_GDSC_norm_transposed<- prcomp(t(GDSCnorm))
+ 
+### PC Values 1-3 ###
+pc1_GDSC_norm_transposed =round(100*pcaproc_GDSC_norm_transposed$sdev[1]^2/(sum(pcaproc_GDSC_norm_transposed$sdev^2)),1)
+pc2_GDSC_norm_transposed =round(100*pcaproc_GDSC_norm_transposed$sdev[2]^2/(sum(pcaproc_GDSC_norm_transposed$sdev^2)),1)
+pc3_GDSC_norm_transposed =round(100*pcaproc_GDSC_norm_transposed$sdev[3]^2/(sum(pcaproc_GDSC_norm_transposed$sdev^2)),1)
+
+### PC1 vs. PC2 ###
+png(file="PC1vPC2_GDSC_norm_transposed.png",  units="px")
+plot(pcaproc_GDSC_norm_transposed$x[,1], pcaproc_GDSC_norm_transposed$x[,2], col= subset_colours , xlab= pc1_GDSC_norm_transposed, ylab= pc2_GDSC_norm_transposed, main='Normalised (Transposed) GDSC: PC1 vs PC2', cex= 1, cex.axis= 1.5, cex.lab= 1.5) +grid()
+dev.off() 
+ 
+### PC2 vs. PC3 ###
+png(file="PC2vPC3_GDSC_norm_transposed.png", units="px")
+plot(pcaproc_GDSC_norm_transposed$x[,2], pcaproc_GDSC_norm_transposed$x[,3], col=subset_colours , xlab= pc2_GDSC_norm_transposed, ylab= pc3_GDSC_norm_transposed, main='Normalised (Transposed) GDSC: PC2 vs PC3', cex= 1, cex.axis= 1.5, cex.lab= 1.5) +grid()
+dev.off()
+
+##Visualisation of GDSC fitted dose response dataset##
+name <- c(rep("1", 10), rep("2", 10), rep("3", 10), rep("4", 10), rep("5", 10))
+
+GDSC2_IC50 <- GDSC2_fitted_dose_responsedata[,16]
+
+##Scatterplot: ln(IC50) vs. Z Score##
+png(file="GDSC_IC50_zscore_scaterplot.png")
+plot(GDSC2_IC50[1:50], GDSC2_zscore[1:50], xlab="Zscore", ylab="IC50", main="GDSC example scatterplot", pch=19, abline(lm(GDSC2_IC50~ GDSC2_zscore), col="red")
+dev.off ()
+
+## Histogram: ln(IC50)##
+png(file="GDSC_IC50histogram.png")
+hist(GDSC2_IC50)
+dev.off()
+
+## Histogram: Z Scores##
+GDSC2_zscore <- GDSC2_fitted_dose_responsedata[,19]
+png(file="GDSC_Zscoreshistogram.png")
+hist(GDSC2_zscore)
+dev.off()
+
+## Comparing Data between GDSC files##
+ 
+GDSC_C <- data.frame(read.delim("/media/newdrive/BCANCER/CCLE/Cell_line_RMA_proc_basalExp.txt", sep = '\t'))
+GDSC_sample_names <- GDSC_C[,1]
+GDSCexpression <- as.matrix(GDSC_C[,3:1020])
+rownames(GDSCexpression) <- GDSC_C[,1]
+drank <- apply(GDSCexpression, 2, rank, ties.method="min") # get ranks
+dsorted <- data.frame(apply(GDSCexpression , 2, sort)) # sort columns
+dmean <- apply(dsorted, 1, mean) # get row means
+index_to_mean <- function(my_index, my_mean){   return(my_mean[my_index]) } # link ranks & means
+GDSCnorm2 <- apply(drank, 2, index_to_mean, my_mean=dmean) # create quantile normalised data
+str(GDSCnorm2) # Check structure of data
+ 
+rownames(GDSCnorm2) <- GDSC_C[,1]
+GDSCnorm2[1:5,1:5]
+  #   DATA.906826 DATA.687983 DATA.910927 DATA.1240138 DATA.1240139
+  # TSPAN6      7.566637    7.453544    8.725320     7.847875     7.686973
+
+GDSC2_f <- GDSC2_fitted_dose_responsedata  
+str(GDSC2_f) # 'data.frame':	135242 obs. of  19 variables: # GDSC2_f$COSMIC_ID 
+ 
+for (j in 1:length(GDSC2_f$COSMIC_ID)) { 
+GDSC2_f$COSMIC_ID[j] <- paste( "DATA",  GDSC2_f$COSMIC_ID[j] , sep=".")
+}  # reassign COSMIC IDs
+head(GDSC2_f$COSMIC_ID[1:5])
+GDSC2_f[1:5,1:5]
+#  DATASET NLME_RESULT_ID NLME_CURVE_ID   COSMIC_ID CELL_LINE_NAME
+# 1   GDSC2            282      13320532 DATA.749709        HCC1954
+ 
+
+##Creating for loop for cell line extraction of top and bottom 1% cell lines##
+# loop through genes first, then cell lines
+ 
+output_genes <- data.frame(as.matrix(rep(0, length(GDSCnorm2[1,])), nrow=length(GDSCnorm2[1,]), ncol=1))
+str(output_genes)
+colnames(output_genes)[1] = "genes" # column names for output
+min <- c() # distribution of min gene expression values across 1,018 cell lines
+q1 <- c() # distribution of q1 gene expression values across 1,018 cell lines
+med <- c() # distribution of median gene expression values across 1,018 cell lines
+q3 <- c() # distribution of q3 gene expression values across 1,018 cell lines
+max <- c() # distribution of max gene expression values across 1,018 cell lines
+ 
+for (i in 1:length(GDSCnorm2[,1]) ){ # for each of the 17737 genes
+min <- c(min, summary(GDSCnorm2[i,])[1])  # min gene expression across 1,018 cell lines
+q1 <- c(q1, summary(GDSCnorm2[i,])[2])  # q1 gene expression across 1,018 cell lines
+med <- c(med, summary(GDSCnorm2[i,])[3])  # median gene expression across 1,018 cell lines
+q3 <- c(q3, summary(GDSCnorm2[i,])[4])  # q3 gene expression across 1,018 cell lines
+max <- c(max, summary(GDSCnorm2[i,])[5])  # max gene expression across 1,018 cell lines
+}  # end for each gene
+ 
+ summary(min)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#  2.331   2.693   2.904   3.364   3.441  12.041 
+summary(q1)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#  2.383   3.036   3.467   4.402   5.375  13.069 
+summary(med)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#  2.483   3.145   3.745   4.722   5.972  13.179 
+summary(q3)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#  2.512   3.262   4.021   4.820   5.996  13.158 
+summary(max)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#  2.587   3.296   4.265   5.128   6.643  13.369 
+ 
+# Below - change i to a single value, etc
+for (i in 1:length(GDSCnorm2[,1]) ){ # for each of the 17737 genes
+	print ( rownames(GDSCnorm2)[i] ) # print gene name
+# print( length( subset(GDSCnorm2[i,], GDSCnorm2[i,] > quantile(GDSCnorm2[i,], prob=0.99)) ) )
+# this gives the number of genes
+# print ( quantile(GDSCnorm2[i,], prob=0.99) )
+# the expression threshold for top 1%
+# print ( subset(GDSCnorm2[i,], GDSCnorm2[i,] > quantile(GDSCnorm2[i,], prob=0.99))
+# this gives the cell lines and expression values
+rownames( data.frame ( subset(GDSCnorm2[i,], GDSCnorm2[i,] > quantile(GDSCnorm2[i,], prob=0.99)) ))
+# this gives the cell lines per gene
+ 
+} # end for
+
+## Global analysis of gene expression data to extract cell lines with highest and lowest gene expression##
+
+GDSCnorm2['RYR1'] #change ‘RYR1’ for gene of interest
+
+# Below - change i to a single value, etc
+for (i in 1:length (GDSCnorm2[,1]) ){# for each of the 17737 genes
+           	print ( rownames(GDSCnorm2)[14136] ) # print gene name
+# print( length( subset(GDSCnorm2[i,], GDSCnorm2[i,]  > quantile(GDSCnorm2[i,], prob=0.99)) ))
+# this gives the number of genes
+# print ( quantile(GDSCnorm2[14136,], prob=0.99) )
+# the expression threshold for top 1%
+print ( subset(GDSCnorm2[14136,], GDSCnorm2[14136,] > quantile(GDSCnorm2[14136,], prob=0.98)))
+# this gives the cell lines and expression values
+rownames( data.frame ( subset(GDSCnorm2[i,], GDSCnorm2[i,] > quantile(GDSCnorm2[i,], prob=0.99)) ))
+# this gives the cell lines per gene
+ 
+} # end for
+
+#Repeat the above loop for gene of interest to extract the 11 highest and lowest cell lines per gene
+##Median Z score IC50 value calculation for each of the 11 highest and lowest expressing cell lines per gene##
+print(which(grepl("DATA.998184", GDSC2_f$COSMIC_ID))) #change “DATA.998184” for cell line of interest
+ 
+ORAI1_998184Zscores <- subset(GDSC2_f, COSMIC_ID=="DATA.998184")$Z_SCORE
+median(ORAI1_998184Zscores) #calculate median of all Z scores for cell line
+[1] -0.998952
+
+#Repeat above code for each cell line to calculate median z score IC50 value
+top1_ORAI1medianZ <- c(-1.055398, 0.59164, -1.247596, -0.804626, -1.319794, -1.274452, 0.285973, -1.061973, -0.680717, -0.38488, -0.998952) #place median Z score IC50 values for cell lines with highest expression into a vector
+bottom1_ORAI1medianZ <- c(-0.2529025, 0.133251, 0.194014, 0.209833, 0.894905, -0.641955, -0.4190285, 1.078079, -0.475802, 0.2805295, -0.975642) #place median Z score IC50 values for cell lines with lowest expression into a vector
+#Repeat above for each gene
+##Statistical Analysis: Wilcoxon Signed Rank Test##
+ORAI1_wilcoxtest <- wilcox.test(top1_ORAI1medianZ, bottom1_ORAI1medianZ, paired = F)
+ORAI1_wilcoxtest
+ 
+        Wilcoxon rank sum exact test
+ 
+data:  top1_ORAI1medianZ and bottom1_ORAI1medianZ
+W = 24, p-value = 0.01577
+alternative hypothesis: true location shift is not equal to 0
+
+#Repeat for all genes of interest
+##Adjust p-values for multiple comparisons (Benjamini-Hochberg)##
+
+pvalues <- c(0.00186, 0.01577, 0.01577, 0.6994, 0.1713, 1, 0.02807, 0.0003941, 0.3653, 0.6522, 0.133, 0.6063, 0.4385, 0.05567, 0.6994, 0.519, 0.5619, 0.9487, 0.1014, 0.03998) #Place p-values for each gene of interest into a vector 
+
+p.adjust(pvalues, method="BH", n = length(pvalues))
+[1] 0.0186000 0.0788500 0.0788500 0.7771111 0.3426000 1.0000000 0.1122800
+[8] 0.0078820 0.6641818 0.7771111 0.2955556 0.7771111 0.7308333 0.1590571
+[15] 0.7771111 0.7771111 0.7771111 0.9986316 0.2535000 0.1332667
+
+#Note genes with p-value <0.05
+
+
+##Visualise genes with p-values <0.05 using ggplot v3.3.3 tools###
+
+library(ggplot2)
+library(tidyverse)
+##STIM1##
+top1_STIM1medianZ = data.frame(Cell_Line = "High STIM1 Expression", Group = "Top 1%", value = c(-0.701452, 0.206288, -1.274452, -1.110506, -1.104774, -0.815792, -0.804626, 0.335127, -1.319794, -1.210272, -0.598485))
+
+bottom1_STIM1medianZ = data.frame(Cell_Line="Low STIM1 Expression", Group = "Bottom 1%", value = c(-0.8635125, -0.2529025, -0.184141, 0.611225, -0.522195, 1.046759, 0.488548, 0.4756065, 0.972237, -0.4430805, 0.209833))
+
+STIM1_topandbottom= rbind(top1_STIM1medianZ, bottom1_STIM1medianZ)
+
+png(file="ggplot_STIM1_top1vsbottom1_medianZscores.png", width=1000, height=1000)
+ggplot(STIM1_topandbottom, aes(x=Cell_Line, y=value, fill = Group)) +
+    geom_boxplot() +
+  ggtitle("Median Z Scores of STIM1: Top 1% vs Bottom 1% Gene Expression") +
+  xlab("Cell Line") + ylab("Z Score IC50 Values")+
+  theme(plot.title = element_text(size =30, hjust = 0.5))+ # main title
+  theme(axis.title.x = element_text(size = 28))+
+  theme(axis.text.x = element_text(color="black", size = 25, hjust = 0.5))+ # y axis title
+  theme(axis.title.y = element_text(size = 28))+ # y axis title
+  theme(axis.text.y = element_text(color="black", size = 25)) + # axis text size
+  theme(
+  legend.title = element_text(size = 28),
+  legend.text = element_text(size = 25)
+  )+
+  geom_jitter(size=6.0, alpha=0.3)
+
+dev.off()
+
+
+##STIM2##
+
+top1_STIM2medianZ = data.frame(Cell_Line ="High STIM2 Expression", Group = "Top 1%", value = c(-0.738039, -0.653206, -0.9013405, -1.078059, -1.332266, -1.348016, 1.167276, -0.876698, -0.962137, -0.340532, -0.784918))
+
+bottom1_STIM2medianZ = data.frame(Cell_Line ="Low STIM2 Expression", Group = "Bottom 1%", value = c(1.193741, 0.548188, -0.0884015, 0.151781, -0.6492035, 0.5784965, -0.112552, 0.7353235, 1.41857, 0.070721, 0.329447))
+
+STIM2_topandbottom= rbind(top1_STIM2medianZ, bottom1_STIM2medianZ)
+
+png(file="ggplot_STIM2_top1vsbottom1_medianZscores.png", width=1000, height=1000)
+ggplot(STIM2_topandbottom, aes(x=Cell_Line, y=value, fill = Group)) +
+    geom_boxplot() +
+  ggtitle("Median Z Scores of STIM2: Top 1% vs Bottom 1% Gene Expression") +
+  xlab("Cell Line") + ylab("Z Score IC50 Values")+
+  theme(plot.title = element_text(size =30, hjust = 0.5))+ # main title
+  theme(axis.title.x = element_text(size = 28))+
+  theme(axis.text.x = element_text(color="black", size = 25, hjust = 0.5))+ # y axis title
+  theme(axis.title.y = element_text(size = 28))+ # y axis title
+  theme(axis.text.y = element_text(color="black", size = 25))+
+  theme(
+  legend.title = element_text(size = 28),
+  legend.text = element_text(size = 25)
+  )+
+  geom_jitter(size=6.0, alpha=0.3)
+
+dev.off()
